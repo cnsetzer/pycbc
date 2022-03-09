@@ -18,6 +18,7 @@ from external arbitrary distributions, and drawing samples from them.
 """
 
 import importlib
+import re
 import numpy as np
 import scipy.integrate as scipy_integrate
 import scipy.interpolate as scipy_interpolate
@@ -119,16 +120,37 @@ class External(object):
             mod = importlib.import_module(modulestr)
 
         logpdfstr = cp.get_opt_tag(section, 'logpdf', tag)
-        logpdf = getattr(mod, logpdfstr)
+        str_and_kwargs = [
+            ", ".join(x.split()) for x in re.split(r"[(,)]", logpdfstr) if x.strip()
+        ]
+        kwargs = dict(x.split("=") for x in str_and_kwargs[1:])
+        if len(str_and_kwargs) > 1:
+            logpdf = getattr(mod, str_and_kwargs[0])(**kwargs)
+        else:
+            logpdf = getattr(mod, str_and_kwargs[0])
 
         cdfinv = rvs = None
         if cp.has_option_tag(section, 'cdfinv', tag):
             cdfinvstr = cp.get_opt_tag(section, 'cdfinv', tag)
-            cdfinv = getattr(mod, cdfinvstr)
+            str_and_kwargs = [
+                ", ".join(x.split()) for x in re.split(r"[(,)]", cdfinvstr) if x.strip()
+            ]
+            kwargs = dict(x.split("=") for x in str_and_kwargs[1:])
+            if len(str_and_kwargs) > 1:
+                cdfinv = getattr(mod, str_and_kwargs[0])(**kwargs)
+            else:
+                cdfinv = getattr(mod, str_and_kwargs[0])
 
         if cp.has_option_tag(section, 'rvs', tag):
             rvsstr = cp.get_opt_tag(section, 'rvs', tag)
-            rvs = getattr(mod, rvsstr)
+            str_and_kwargs = [
+                ", ".join(x.split()) for x in re.split(r"[(,)]", rvsstr) if x.strip()
+            ]
+            kwargs = dict(x.split("=") for x in str_and_kwargs[1:])
+            if len(str_and_kwargs) > 1:
+                rvs = getattr(mod, str_and_kwargs[0])(**kwargs)
+            else:
+                rvs = getattr(mod, str_and_kwargs[0])
 
         if modulestr == "pycbc.distributions.external":
             return cls(params=params, file_path=file_path,
